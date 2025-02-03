@@ -254,26 +254,26 @@ class _MyHomePageState extends State<MyHomePage> {
                                   Padding(
                                     padding: EdgeInsets.only(
                                       top: 20,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          Center(
-                                            child: _numEffects == 0
-                                                ? const Text('No known effects')
-                                                : const Text('Known effects',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                          ),
-                                          for (var i = 0;
-                                              i < _effectsWidgets.length;
-                                              ++i)
-                                            (_effectsWidgets[i])
-                                        ],
-                                      ),
                                     ),
-                                  )
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Center(
+                                          child: _numEffects == 0
+                                              ? const Text('No known effects')
+                                              : const Text('Known effects',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                        ),
+                                        for (var i = 0;
+                                            i < _effectsWidgets.length;
+                                            ++i)
+                                          (_effectsWidgets[i])
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
