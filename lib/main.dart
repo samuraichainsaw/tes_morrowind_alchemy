@@ -709,16 +709,15 @@ class _MyHomePageState extends State<MyHomePage> {
     var alchemy = max(min(100, (await prefs.getInt('skill_alchemy')) ?? 25), 0);
 
     setState(() {
-      print(url);
       if (url.contains("#stats/")) {
         url = url.substring(url.indexOf("#stats/"));
         url = url.replaceAll("#stats/", "");
         List<String> parts = url.split("/");
 
         try {
-          intelligence = int.parse(parts[0]);
-          luck = int.parse(parts[1]);
-          alchemy = int.parse(parts[2]);
+          intelligence = max(min(100, int.parse(parts[0])), 0);
+          luck = max(min(100, int.parse(parts[1])), 0);
+          alchemy = max(min(100, int.parse(parts[2])), 0);
           if (parts.length > 4) {
             var teffects = parts[4].split(":");
             for (var effect in teffects) {
