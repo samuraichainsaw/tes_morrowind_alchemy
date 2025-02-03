@@ -6,11 +6,10 @@ class AutocompleteTextField extends StatefulWidget {
   final void Function(String selection) onSelected;
 
   const AutocompleteTextField(
-      {Key? key,
+      {super.key,
       required this.caption,
       required this.list,
-      required this.onSelected})
-      : super(key: key);
+      required this.onSelected});
 
   @override
   State<AutocompleteTextField> createState() => _AutocompleteTextFieldState();

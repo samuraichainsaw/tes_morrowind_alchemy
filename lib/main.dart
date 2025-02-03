@@ -32,7 +32,6 @@ class MyApp extends StatefulWidget {
   const MyApp({super.key});
   @override
   State<StatefulWidget> createState() {
-    // TODO: implement createState
     return _MyAppState();
   }
 }
@@ -61,16 +60,16 @@ class _MyAppState extends State<MyApp> {
     final mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
 
     // Listener for changes in user's color scheme preference
-    mediaQueryList?.addListener((event) {
+    mediaQueryList.addListener((event) {
       setState(() {
-        //_themeMode = event.matches ? ThemeMode.dark : ThemeMode.light;
+        _themeMode = mediaQueryList.matches ? ThemeMode.dark : ThemeMode.light;
       });
     });
 
     // Set the initial theme based on the current preference
     setState(() {
       _themeMode =
-          mediaQueryList?.matches == true ? ThemeMode.dark : ThemeMode.light;
+          mediaQueryList.matches == true ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
@@ -79,7 +78,7 @@ class _MyAppState extends State<MyApp> {
   late ThemeData _darkMode;
 
   late ThemeData _lightMode;
-  // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constrainst) {
@@ -89,11 +88,6 @@ class _MyAppState extends State<MyApp> {
         theme: _lightMode, // Default light theme
         darkTheme: _darkMode, // Default dark theme
         themeMode: _themeMode,
-        // theme: ThemeData(
-        //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellowAccent),
-        //   useMaterial3: true,
-        //   fontFamily: 'MagicCardsNormal',
-        // ),
         home: MyHomePage(title: _title),
         debugShowCheckedModeBanner: false,
       );
@@ -154,7 +148,6 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: LayoutBuilder(builder: (context, constrainst) {
-            //var width = constrainst.maxWidth;
             var columnWidth = 1024.0;
             return Column(
               children: <Widget>[
@@ -276,10 +269,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             var ingredient = data.values
                                                 .firstWhere((e) =>
                                                     e['name'] == selection);
-                                            if (ingredient != null) {
-                                              _addOrRemovieIngerdient(
-                                                  ingredient);
-                                            }
+                                            _addOrRemovieIngerdient(ingredient);
                                           }),
                                       _selectedIngredients.isEmpty
                                           ? const Text('No selected ingredient')
@@ -718,9 +708,6 @@ class _MyHomePageState extends State<MyHomePage> {
     var luck = max(min(100, (await prefs.getInt('attr_luck')) ?? 25), 0);
     var alchemy = max(min(100, (await prefs.getInt('skill_alchemy')) ?? 25), 0);
 
-    //url =
-    //   "http://localhost:33067/#stats/77/34/68/potion/Cure%20Common%20Disease/ingred_gravedust_01:ingred_green_lichen_01";
-
     setState(() {
       print(url);
       if (url.contains("#stats/")) {
@@ -789,7 +776,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void updateBrowserURL() {
     html.window.history.pushState(null, ".",
-        '#stats/${this._currentIntSliderValue.round()}/${this._currentLuckSliderValue.round()}/${this._currentAlchemySliderValue.round()}/potion/${_selectedEffects.toList().join(":")}/${_selectedIngredients.toList().join(":")}');
+        '#stats/${_currentIntSliderValue.round()}/${_currentLuckSliderValue.round()}/${_currentAlchemySliderValue.round()}/potion/${_selectedEffects.toList().join(":")}/${_selectedIngredients.toList().join(":")}');
   }
 
   void _addOrRemoveEffect(arrLabel) {
