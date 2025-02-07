@@ -662,39 +662,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void _fetchDescription(effectName) async {
     return;
     //print("!");
-
-    try {
-      //https://en.uesp.net/w/api.php?action=query&format=json&prop=info%7Cextracts%7Cpageimages%7Crevisions%7Cinfo&formatversion=2&redirects=true&exintro=true&exchars=525&explaintext=true&piprop=thumbnail&pithumbsize=300&pilicense=any&rvprop=timestamp&inprop=url&titles=Morrowind%3AWater_Walking&smaxage=300&maxage=300&uselang=content
-      var url = Uri.https('en.uesp.net', '/w/api.php', {
-        "action": "query",
-        "format": "json",
-        "prop": "info|extracts|pageimages|revisions|info",
-        "formatversion": "2",
-        "redirects": "true",
-        "exintro": "true",
-        "exchars": "525",
-        "explaintext": "true",
-        "piprop": "thumbnail",
-        "pithumbsize": "300",
-        "pilicense": "any",
-        "rvprop": "timestamp",
-        "inprop": "url",
-        "titles": "Morrowind:" + effectName.replaceAll(" ", "_"),
-        "smaxage": "300",
-        "maxage": "300",
-        "uselang": "content"
-      });
-      // Await the http get response, then decode the json-formatted response.
-      var response = await http.get(url);
-      if (response.statusCode == 200) {
-        var jsonResponse =
-            convert.jsonDecode(response.body) as Map<String, dynamic>;
-        var itemCount = jsonResponse['totalItems'];
-        print('Number of books about http: $itemCount.');
-      } else {
-        print('Request failed with status: ${response.statusCode}.');
-      }
-    } finally {}
   }
 
   void onIntSliderValueChanged(double p) async {
