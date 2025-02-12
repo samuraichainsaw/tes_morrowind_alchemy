@@ -6,10 +6,8 @@ import 'package:morrowind_alchemy/attribute_slider.dart';
 import 'package:morrowind_alchemy/autocomplete_text_fields.dart';
 import 'package:morrowind_alchemy/data/ingredients.dart';
 import 'package:morrowind_alchemy/data/effects.dart';
-import 'package:scaled_app/scaled_app.dart';
+import 'package:morrowind_alchemy/responsive_layout_fn.dart';
 
-import 'dart:convert' as convert;
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 var data = ingredients;
@@ -25,7 +23,8 @@ double scaleFactorCallback(Size deviceSize) {
 
 void main() {
   // 1st way to use this package
-  runAppScaled(const MyApp(), scaleFactor: scaleFactorCallback);
+  //runAppScaled(const MyApp(), scaleFactor: scaleFactorCallback);
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -145,8 +144,19 @@ class _MyHomePageState extends State<MyHomePage> {
           physics: const BouncingScrollPhysics(),
           child: LayoutBuilder(builder: (context, constrainst) {
             var columnWidth = 1024.0 / 3.0 + 17;
-            return Column(
+            /*return ResponsiveLayout(
+                small: Text("small"),
+                xSmall: Text("xsmall"),
+                medium: Text("medium"),
+                large: Text("large"),
+                xxLarge: Text("xxlarge"));
+            */
+            return ResponsiveLayoutFn(
+              xxLarge: (className) => Text("xxLarge"),
+            );
+            Column(
               children: <Widget>[
+                Text(constrainst.maxWidth.toString()),
                 Card(
                   child: SizedBox(
                     width: 1024,
@@ -174,70 +184,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 ),
-                Center(
-                  child: SizedBox(
-                    width: 1024,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Card(
-                              child: SizedBox(
-                                width: 280,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Center(
-                                      child: _activeEffects.isEmpty
-                                          ? const Text('No active effect(s)')
-                                          : const Text('Active effects',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                    ),
-                                    Center(
-                                      //
-
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          Text(
-                                              'chance: ${min(100.0, _currentAlchemySliderValue + (_currentIntSliderValue / 10) + (_currentLuckSliderValue / 10)).toStringAsFixed(2)}%',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          Tooltip(
-                                            message:
-                                                "success chance of creating a potion",
-                                            child: CircleAvatar(
-                                              radius: 8,
-                                              child: Text(
-                                                'i',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 6,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-                            _renderEffectTextsInRow(
-                                _activeEffects.toList(), 0, 1),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Column(
@@ -440,6 +388,68 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             );
           })),
+    );
+  }
+
+  Widget _ActiveEffectsContent() {
+    return Center(
+      child: SizedBox(
+        width: 1024,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Card(
+                  child: SizedBox(
+                    width: 280,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Center(
+                          child: _activeEffects.isEmpty
+                              ? const Text('No active effect(s)')
+                              : const Text('Active effects',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        Center(
+                          //
+
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Text(
+                                  'chance: ${min(100.0, _currentAlchemySliderValue + (_currentIntSliderValue / 10) + (_currentLuckSliderValue / 10)).toStringAsFixed(2)}%',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              Tooltip(
+                                message: "success chance of creating a potion",
+                                child: CircleAvatar(
+                                  radius: 8,
+                                  child: Text(
+                                    'i',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 6,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                _renderEffectTextsInRow(_activeEffects.toList(), 0, 1),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
