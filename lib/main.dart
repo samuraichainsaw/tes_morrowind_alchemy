@@ -151,11 +151,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 large: Text("large"),
                 xxLarge: Text("xxlarge"));
             */
-            return ResponsiveLayoutFn(
-              xxLarge: (className) => Text("xxLarge"),
-            );
-            Column(
+            return Column(
               children: <Widget>[
+                ResponsiveLayoutFn(
+                  xSmall: (className) => Text('$className'),
+                ),
                 Text(constrainst.maxWidth.toString()),
                 Card(
                   child: SizedBox(
