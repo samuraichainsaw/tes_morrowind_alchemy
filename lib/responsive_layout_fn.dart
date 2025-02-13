@@ -54,44 +54,46 @@ class ResponsiveLayoutFn extends StatelessWidget {
   static bool isXXLarge(BuildContext context) =>
       MediaQuery.of(context).size.width >= 1400;
 
-  @override
-  Widget build(BuildContext context) {
+  Widget Function(ResponsiveLayoutBreakPoints className) getFn(context) {
     Widget empty(ResponsiveLayoutBreakPoints className) => SizedBox.shrink();
 
+    if (isXXLarge(context)) {
+      return (xxLarge ?? xLarge ?? large ?? medium ?? small ?? xSmall ?? empty);
+    } else if (isXLarge(context)) {
+      return (xLarge ?? large ?? medium ?? small ?? xSmall ?? empty);
+    } else if (isLarge(context)) {
+      return (large ?? medium ?? small ?? xSmall ?? empty);
+    } else if (isMedium(context)) {
+      return (medium ?? small ?? xSmall ?? empty);
+    } else if (isSmall(context)) {
+      return (small ?? xSmall ?? empty);
+    } else {
+      // X-Small
+      return (xSmall ?? empty);
+    }
+  }
+
+  static ResponsiveLayoutBreakPoints getBreakPoint(BuildContext context) {
+    if (isXXLarge(context)) {
+      return (ResponsiveLayoutBreakPoints.xxLarge);
+    } else if (isXLarge(context)) {
+      return (ResponsiveLayoutBreakPoints.xLarge);
+    } else if (isLarge(context)) {
+      return (ResponsiveLayoutBreakPoints.large);
+    } else if (isMedium(context)) {
+      return (ResponsiveLayoutBreakPoints.medium);
+    } else if (isSmall(context)) {
+      return (ResponsiveLayoutBreakPoints.small);
+    } else {
+      return (ResponsiveLayoutBreakPoints.xSmall);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (isXXLarge(context)) {
-          return (xxLarge ??
-              xLarge ??
-              large ??
-              medium ??
-              small ??
-              xSmall ??
-              empty)(ResponsiveLayoutBreakPoints.xxLarge);
-        } else if (isXLarge(context)) {
-          return (xLarge ??
-              large ??
-              medium ??
-              small ??
-              xSmall ??
-              empty)(ResponsiveLayoutBreakPoints.xLarge);
-        } else if (isLarge(context)) {
-          return (large ??
-              medium ??
-              small ??
-              xSmall ??
-              empty)(ResponsiveLayoutBreakPoints.large);
-        } else if (isMedium(context)) {
-          return (medium ??
-              small ??
-              xSmall ??
-              empty)(ResponsiveLayoutBreakPoints.medium);
-        } else if (isSmall(context)) {
-          return (small ?? xSmall ?? empty)(ResponsiveLayoutBreakPoints.small);
-        } else {
-          // X-Small
-          return (xSmall ?? empty)(ResponsiveLayoutBreakPoints.xSmall);
-        }
+        return getFn(context)(getBreakPoint(context));
       },
     );
   }

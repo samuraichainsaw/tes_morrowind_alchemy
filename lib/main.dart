@@ -2,10 +2,12 @@ import 'dart:math';
 import 'dart:html' as html;
 import 'dart:js' as js;
 import 'package:flutter/material.dart';
+import 'package:morrowind_alchemy/accordion.dart';
 import 'package:morrowind_alchemy/attribute_slider.dart';
 import 'package:morrowind_alchemy/autocomplete_text_fields.dart';
 import 'package:morrowind_alchemy/data/ingredients.dart';
 import 'package:morrowind_alchemy/data/effects.dart';
+import 'package:morrowind_alchemy/responsive_layout.dart';
 import 'package:morrowind_alchemy/responsive_layout_fn.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -103,7 +105,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late double _currentAlchemySliderValue = 16.0;
   var _currentIntSliderValue = 23.0;
   var _currentLuckSliderValue = 11.0;
@@ -117,6 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var _sortedEffects = [];
   List<Widget> _effectsWidgets = [
     Container(),
+    Container(),
   ];
 
   final Map<int, List<Widget>> _cachedEffectWidgets = {};
@@ -124,26 +127,79 @@ class _MyHomePageState extends State<MyHomePage> {
   final Set<String> _selectedIngredients = {};
   final Set<String> _activeEffects = {};
   final Map<String, String> _effectsDescriptions = {};
+  late TabController _tabController;
 
   @override
   void initState() {
     _loadStateData();
+    _tabController = TabController(length: 5, vsync: this);
     super.initState();
   }
 
   @override
+  void dispose() {
+    _tabController.dispose(); // Dispose of the controller
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    TabBar? appBarBottom;
+
+    ResponsiveLayoutBreakPoints contextBreakPoint =
+        ResponsiveLayoutFn.getBreakPoint(context);
+    var layoutWidth =
+        min(1024, max(MediaQuery.of(context).size.width, 800)).toDouble();
+    var columnWidth = layoutWidth / 3.0 - 6.0;
+    ResponsiveLayoutFn(
+      medium: (className) {
+        return Container();
+      },
+      xSmall: (className) {
+        appBarBottom = TabBar(
+          controller: _tabController, // Assign the controller
+          tabs: [
+            Tab(
+              icon: Icon(Icons.home),
+              text: 'attributes',
+            ),
+            TopNavigationTab(
+              caption: 'known effects',
+              count: _effects.length,
+              icon: Icon(Icons.thunderstorm_outlined),
+            ),
+            TopNavigationTab(
+              caption: 'effects',
+              count: _selectedEffects.length,
+              icon: Icon(Icons.thunderstorm),
+            ),
+            TopNavigationTab(
+              caption: 'ingredients',
+              count: _selectedIngredients.length,
+              icon: Icon(Icons.local_grocery_store_outlined),
+            ),
+            TopNavigationTab(
+              caption: 'potion',
+              count: _activeEffects.length,
+              icon: Icon(Icons.face),
+            ),
+          ],
+        );
+        return Container();
+      },
+    ).getFn(context)(contextBreakPoint);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(
           widget.title,
         ),
+        bottom: appBarBottom,
       ),
       body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: LayoutBuilder(builder: (context, constrainst) {
-            var columnWidth = 1024.0 / 3.0 + 17;
             /*return ResponsiveLayout(
                 small: Text("small"),
                 xSmall: Text("xsmall"),
@@ -151,301 +207,622 @@ class _MyHomePageState extends State<MyHomePage> {
                 large: Text("large"),
                 xxLarge: Text("xxlarge"));
             */
-            return Column(
-              children: <Widget>[
-                ResponsiveLayoutFn(
-                  xSmall: (className) => Text('$className'),
-                ),
-                Text(constrainst.maxWidth.toString()),
-                Card(
-                  child: SizedBox(
-                    width: 1024,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        AttributeSlider(
-                          onSliderValueChanged: onAlchemySliderValueChanged,
-                          value: _currentAlchemySliderValue,
-                          caption: "Alchemy",
-                          description:
-                              "Alchemy skill level. Determines how many effects can you identify\n on ingredients. Improves potion quality, strength and success chance.",
-                        ),
-                        AttributeSlider(
-                          onSliderValueChanged: onIntSliderValueChanged,
-                          value: _currentIntSliderValue,
-                          caption: "Intelligence",
-                        ),
-                        AttributeSlider(
-                          onSliderValueChanged: onLuckSliderValueChanged,
-                          value: _currentLuckSliderValue,
-                          caption: "Luck",
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Card(
-                            child: SizedBox(
-                              width: 280,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top: 20,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Center(
-                                          child: _numEffects == 0
-                                              ? const Text('No known effects')
-                                              : const Text('Known effects',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                        ),
-                                        for (var i = 0;
-                                            i < _effectsWidgets.length;
-                                            ++i)
-                                          (_effectsWidgets[i])
-                                      ],
-                                    ),
-                                  ),
-                                ],
+            return Column(children: <Widget>[
+              ResponsiveLayoutFn(
+                xSmall: (className) => Text('$className'),
+              ),
+              ResponsiveLayoutFn(
+                medium: (className) {
+                  return Column(
+                    children: [
+                      Text(constrainst.maxWidth.toString()),
+                      Card(
+                        child: SizedBox(
+                          width: layoutWidth,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              AttributeSlider(
+                                onSliderValueChanged:
+                                    onAlchemySliderValueChanged,
+                                value: _currentAlchemySliderValue,
+                                caption: "Alchemy",
+                                description:
+                                    "Alchemy skill level. Determines how many effects can you identify\n on ingredients. Improves potion quality, strength and success chance.",
+                                breakPoint: contextBreakPoint,
                               ),
-                            ),
+                              AttributeSlider(
+                                onSliderValueChanged: onIntSliderValueChanged,
+                                value: _currentIntSliderValue,
+                                caption: "Intelligence",
+                                breakPoint: contextBreakPoint,
+                              ),
+                              AttributeSlider(
+                                onSliderValueChanged: onLuckSliderValueChanged,
+                                value: _currentLuckSliderValue,
+                                caption: "Luck",
+                                breakPoint: contextBreakPoint,
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Card(
-                          child: SizedBox(
-                            width: columnWidth,
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
-                              child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Center(
-                                      child: _selectedEffects.isEmpty
-                                          ? const Text('No selected effect(s)')
-                                          : const Text('Selected effects',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                    ),
-                                    AutocompleteTextField(
-                                        caption: 'Enter effect name',
-                                        list: _effects,
-                                        onSelected: (selection) {
-                                          _addOrRemoveEffect(selection);
-                                        }),
-                                  ]),
-                            ),
-                          ),
-                        ),
-                        for (var selectedEffect in _selectedEffects)
-                          (Card(
-                            child: SizedBox(
-                              width: columnWidth,
-                              child: Center(
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Image(
-                                          image: AssetImage(
-                                              'assets/images/${effectsData[(selectedEffect)]}'),
-                                        ),
-                                        SizedBox(
-                                          width: 4,
-                                        ),
-                                        Text(
-                                          selectedEffect,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        IconButton(
-                                            onPressed: () {
-                                              _addOrRemoveEffect(
-                                                  selectedEffect);
-                                            },
-                                            icon: Icon(
-                                              Icons.close,
-                                              color: Colors.red,
-                                              size: 12,
-                                            ))
-                                      ],
-                                    ),
-                                    Row(
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Card(
+                                  child: SizedBox(
+                                    width: columnWidth,
+                                    child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Row(
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            top: 20,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              Center(
+                                                child: _numEffects == 0
+                                                    ? const Text(
+                                                        'No known effects')
+                                                    : const Text(
+                                                        'Known effects',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold)),
+                                              ),
+                                              for (var i = 0;
+                                                  i < _effectsWidgets.length;
+                                                  ++i)
+                                                (_effectsWidgets[i])
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Card(
+                                child: SizedBox(
+                                  width: columnWidth,
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.fromLTRB(20, 20, 20, 20),
+                                    child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Center(
+                                            child: _selectedEffects.isEmpty
+                                                ? const Text(
+                                                    'No selected effect(s)')
+                                                : const Text('Selected effects',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                          ),
+                                          AutocompleteTextField(
+                                              caption: 'Enter effect name',
+                                              list: _effects,
+                                              onSelected: (selection) {
+                                                _addOrRemoveEffect(selection);
+                                              }),
+                                        ]),
+                                  ),
+                                ),
+                              ),
+                              for (var selectedEffect in _selectedEffects)
+                                (Card(
+                                  child: SizedBox(
+                                    width: columnWidth,
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Image(
+                                                image: AssetImage(
+                                                    'assets/images/${effectsData[(selectedEffect)]}'),
+                                              ),
+                                              SizedBox(
+                                                width: 4,
+                                              ),
+                                              Text(
+                                                selectedEffect,
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              IconButton(
+                                                  onPressed: () {
+                                                    _addOrRemoveEffect(
+                                                        selectedEffect);
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 12,
+                                                  ))
+                                            ],
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _renderIngredientTextsInColumn(
+                                                      _ingredientsByEffect[
+                                                          selectedEffect],
+                                                      0,
+                                                      1),
+                                                  SizedBox(
+                                                    width: 2,
+                                                  ),
+                                                  SizedBox(
+                                                    width: 2,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ))
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Card(
+                                child: SizedBox(
+                                  width: columnWidth,
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.fromLTRB(20, 20, 20, 20),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          _selectedIngredients.isEmpty
+                                              ? const Text(
+                                                  'No selected ingredient')
+                                              : const Text(
+                                                  'Selected ingredients:',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                          AutocompleteTextField(
+                                              caption: 'Enter ingredient name',
+                                              list: data.values
+                                                  .toList()
+                                                  .map((v) =>
+                                                      v['name'] as String)
+                                                  .toSet(),
+                                              onSelected: (selection) {
+                                                var ingredient = data.values
+                                                    .firstWhere((e) =>
+                                                        e['name'] == selection);
+                                                _addOrRemovieIngerdient(
+                                                    ingredient);
+                                              }),
+                                          SizedBox(width: 20),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Center(
+                                child: Card(
+                                  child: SizedBox(
+                                    width: columnWidth,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            _renderIngredientTextsInColumn(
-                                                _ingredientsByEffect[
-                                                    selectedEffect],
-                                                0,
-                                                1),
-                                            SizedBox(
-                                              width: 2,
-                                            ),
-                                            SizedBox(
-                                              width: 2,
-                                            ),
+                                            for (var ingredientId
+                                                in _selectedIngredients)
+                                              (_renderIngredientsWithEffects(
+                                                  ingredientId))
                                           ],
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ))
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Card(
-                          child: SizedBox(
-                            width: columnWidth,
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    _selectedIngredients.isEmpty
-                                        ? const Text('No selected ingredient')
-                                        : const Text('Selected ingredients:',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
-                                    AutocompleteTextField(
-                                        caption: 'Enter ingredient name',
-                                        list: data.values
-                                            .toList()
-                                            .map((v) => v['name'] as String)
-                                            .toSet(),
-                                        onSelected: (selection) {
-                                          var ingredient = data.values
-                                              .firstWhere((e) =>
-                                                  e['name'] == selection);
-                                          _addOrRemovieIngerdient(ingredient);
-                                        }),
-                                    SizedBox(width: 20),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
-                        ),
-                        Center(
-                          child: Card(
-                            child: SizedBox(
-                              width: columnWidth,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Column(
+                        ],
+                      ),
+                    ],
+                  );
+                },
+                xSmall: (className) {
+                  return Column(
+                    children: [
+                      /*
+                      Accordion(title: 'attributes', content: Text('x')),
+                      Accordion(
+                        title: 'known effects',
+                        content: Text('x'),
+                        initiallyExpanded: true,
+                      ),
+                      Accordion(
+                        title: 'selected effects',
+                        content: Text('x'),
+                      ),
+                      Accordion(
+                        title: 'selected ingredients',
+                        content: Text('x'),
+                      ),
+                      Accordion(
+                        title: 'potion effects',
+                        content: Text('x'),
+                      ),*/
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height - 80,
+                        child: TabBarView(
+                          controller: _tabController,
+                          // Assign the controller
+                          children: [
+                            Container(
+                                child: Container(
+                              child: Card(
+                                child: SizedBox(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                        CrossAxisAlignment.center,
                                     children: [
-                                      for (var ingredientId
-                                          in _selectedIngredients)
-                                        (_renderIngredientsWithEffects(
-                                            ingredientId))
+                                      AttributeSlider(
+                                        onSliderValueChanged:
+                                            onAlchemySliderValueChanged,
+                                        value: _currentAlchemySliderValue,
+                                        caption: "Alchemy",
+                                        description:
+                                            "Alchemy skill level. Determines how many effects can you identify\n on ingredients. Improves potion quality, strength and success chance.",
+                                        breakPoint: contextBreakPoint,
+                                      ),
+                                      AttributeSlider(
+                                        onSliderValueChanged:
+                                            onIntSliderValueChanged,
+                                        value: _currentIntSliderValue,
+                                        caption: "Intelligence",
+                                        breakPoint: contextBreakPoint,
+                                      ),
+                                      AttributeSlider(
+                                        onSliderValueChanged:
+                                            onLuckSliderValueChanged,
+                                        value: _currentLuckSliderValue,
+                                        caption: "Luck",
+                                        breakPoint: contextBreakPoint,
+                                      ),
                                     ],
+                                  ),
+                                ),
+                              ),
+                            )),
+                            SingleChildScrollView(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Center(
+                                    child: Card(
+                                      child: SizedBox(
+                                        child: Column(children: [
+                                          Center(
+                                            child: _numEffects == 0
+                                                ? const Text('No known effects')
+                                                : Container() /* const Text('Known effects',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold))*/
+                                            ,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                  top: 20,
+                                                ),
+                                                child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                    for (var i = 0;
+                                                        i <
+                                                            _effectsWidgets
+                                                                .length;
+                                                        ++i)
+                                                      (_effectsWidgets[i])
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ]),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Card(
+                                    child: SizedBox(
+                                      width: columnWidth,
+                                      child: Padding(
+                                        padding:
+                                            EdgeInsets.fromLTRB(20, 20, 20, 20),
+                                        child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Center(
+                                                child: _selectedEffects.isEmpty
+                                                    ? const Text(
+                                                        'No selected effect(s)')
+                                                    : const Text(
+                                                        'Selected effects',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold)),
+                                              ),
+                                              AutocompleteTextField(
+                                                  caption: 'Enter effect name',
+                                                  list: _effects,
+                                                  onSelected: (selection) {
+                                                    _addOrRemoveEffect(
+                                                        selection);
+                                                  }),
+                                            ]),
+                                      ),
+                                    ),
+                                  ),
+                                  for (var selectedEffect in _selectedEffects)
+                                    (Card(
+                                      child: SizedBox(
+                                        width: columnWidth,
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Image(
+                                                    image: AssetImage(
+                                                        'assets/images/${effectsData[(selectedEffect)]}'),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 4,
+                                                  ),
+                                                  Text(
+                                                    selectedEffect,
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        _addOrRemoveEffect(
+                                                            selectedEffect);
+                                                      },
+                                                      icon: Icon(
+                                                        Icons.close,
+                                                        color: Colors.red,
+                                                        size: 12,
+                                                      ))
+                                                ],
+                                              ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      _renderIngredientTextsInColumn(
+                                                          _ingredientsByEffect[
+                                                              selectedEffect],
+                                                          0,
+                                                          1),
+                                                      SizedBox(
+                                                        width: 2,
+                                                      ),
+                                                      SizedBox(
+                                                        width: 2,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ))
+                                ],
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                Card(
+                                  child: SizedBox(
+                                    width: columnWidth,
+                                    child: Padding(
+                                      padding:
+                                          EdgeInsets.fromLTRB(20, 20, 20, 20),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            _selectedIngredients.isEmpty
+                                                ? const Text(
+                                                    'No selected ingredient')
+                                                : const Text(
+                                                    'Selected ingredients:',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                            AutocompleteTextField(
+                                                caption:
+                                                    'Enter ingredient name',
+                                                list: data.values
+                                                    .toList()
+                                                    .map((v) =>
+                                                        v['name'] as String)
+                                                    .toSet(),
+                                                onSelected: (selection) {
+                                                  var ingredient = data.values
+                                                      .firstWhere((e) =>
+                                                          e['name'] ==
+                                                          selection);
+                                                  _addOrRemovieIngerdient(
+                                                      ingredient);
+                                                }),
+                                            SizedBox(width: 20),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: Card(
+                                    child: SizedBox(
+                                      width: columnWidth,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              for (var ingredientId
+                                                  in _selectedIngredients)
+                                                (_renderIngredientsWithEffects(
+                                                    ingredientId))
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            _ActiveEffectsContent(),
+                          ],
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            );
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ]);
           })),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_tabController.index < _tabController.length - 1) {
+            _tabController.animateTo(_tabController.index + 1);
+          } else {
+            _tabController.animateTo(0); // Wrap
+          }
+        },
+        child: Icon(Icons.arrow_forward),
+      ),
     );
   }
 
   Widget _ActiveEffectsContent() {
     return Center(
       child: SizedBox(
-        width: 1024,
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              children: [
-                Card(
-                  child: SizedBox(
-                    width: 280,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Center(
-                          child: _activeEffects.isEmpty
-                              ? const Text('No active effect(s)')
-                              : const Text('Active effects',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        Center(
-                          //
-
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Text(
-                                  'chance: ${min(100.0, _currentAlchemySliderValue + (_currentIntSliderValue / 10) + (_currentLuckSliderValue / 10)).toStringAsFixed(2)}%',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              Tooltip(
-                                message: "success chance of creating a potion",
-                                child: CircleAvatar(
-                                  radius: 8,
-                                  child: Text(
-                                    'i',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 6,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        )
-                      ],
+            Card(
+              child: SizedBox(
+                width: 280,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Center(
+                      child: _activeEffects.isEmpty
+                          ? const Text('No active effect(s)')
+                          : const Text('Active effects',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
+                    Center(
+                        //
+
+                        child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text(
+                            'chance: ${min(100.0, _currentAlchemySliderValue + (_currentIntSliderValue / 10) + (_currentLuckSliderValue / 10)).toStringAsFixed(2)}%',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        Tooltip(
+                          message: "success chance of creating a potion",
+                          child: CircleAvatar(
+                            radius: 8,
+                            child: Text(
+                              'i',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 6,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )),
+                    _renderEffectTextsInColumn(_activeEffects.toList(), 0, 1),
+                  ],
                 ),
-                _renderEffectTextsInRow(_activeEffects.toList(), 0, 1),
-              ],
+              ),
             ),
           ],
         ),
@@ -493,7 +870,7 @@ class _MyHomePageState extends State<MyHomePage> {
       } else {
         _sortedEffects = _effects.toList();
         _sortedEffects.sort();
-        _effectsWidgets = List.filled(1, Container());
+        _effectsWidgets = List.filled(2, Container());
         for (var i = 0; i < _effectsWidgets.length; ++i) {
           _effectsWidgets[i] = _renderEffectTextsInColumn(
               _sortedEffects, i, _effectsWidgets.length);
@@ -545,9 +922,12 @@ class _MyHomePageState extends State<MyHomePage> {
       key: ValueKey(
           start < arrLabels.length ? arrLabels[start] : "empty_$start"),
       mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       spacing: 4,
-      children: [..._prepareEffectsWidgets(arrLabels, start, step)],
+      children: [
+        ..._prepareEffectsWidgets(arrLabels, start, step)
+            .map((e) => SizedBox(width: 200, child: e))
+      ],
     );
   }
 
@@ -791,5 +1171,48 @@ class _MyHomePageState extends State<MyHomePage> {
             ? _selectedIngredients.add(ingredient['id']!)
             : false);
     _onSelectedIngredientChange();
+  }
+}
+
+class TopNavigationTab extends StatelessWidget {
+  final String caption;
+  final int count;
+  final Icon? icon;
+
+  const TopNavigationTab(
+      {required this.caption, required this.count, this.icon, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+        icon: SizedBox(
+          width: 42,
+          child: Stack(
+            children: [
+              icon ?? Icon(Icons.question_mark),
+              Positioned(
+                left: 22,
+                child: CircleAvatar(
+                  radius: 8,
+                  child: Text(
+                    count.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              caption,
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ));
   }
 }

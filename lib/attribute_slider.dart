@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:morrowind_alchemy/responsive_layout_fn.dart';
 
 class AttributeSlider extends StatefulWidget {
   double value = 20;
   String caption = "Slider ...";
   String description;
   final void Function(double p) onSliderValueChanged;
+  final ResponsiveLayoutBreakPoints breakPoint;
   AttributeSlider(
       {super.key,
       required this.onSliderValueChanged,
       required this.value,
       required this.caption,
+      required this.breakPoint,
       this.description = ""});
   @override
   State<StatefulWidget> createState() => _AttributeSliderState(
@@ -24,6 +27,8 @@ class _AttributeSliderState extends State<AttributeSlider> {
   final void Function(double p) onSliderValueChanged;
   String description;
   String caption = "Slider...";
+  var textContainerWidth = 120.0;
+
   _AttributeSliderState({
     required this.onSliderValueChanged,
     required this.value,
@@ -32,14 +37,42 @@ class _AttributeSliderState extends State<AttributeSlider> {
   });
 
   @override
+  void initState() {
+    switch (widget.breakPoint) {
+      case ResponsiveLayoutBreakPoints.xxLarge:
+        textContainerWidth = 75;
+        break;
+      case ResponsiveLayoutBreakPoints.xLarge:
+        textContainerWidth = 75;
+        break;
+      case ResponsiveLayoutBreakPoints.large:
+        textContainerWidth = 75;
+        break;
+      case ResponsiveLayoutBreakPoints.medium:
+        textContainerWidth = 70;
+        break;
+      case ResponsiveLayoutBreakPoints.small:
+        textContainerWidth = 120;
+        break;
+      case ResponsiveLayoutBreakPoints.xSmall:
+        textContainerWidth = 120;
+        break;
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          caption,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+        SizedBox(
+          width: textContainerWidth,
+          child: Text(
+            caption,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         description.isNotEmpty
@@ -56,7 +89,7 @@ class _AttributeSliderState extends State<AttributeSlider> {
                   ),
                 ),
               )
-            : Container(),
+            : SizedBox(width: 18),
         SizedBox(
           width: 20,
         ),
