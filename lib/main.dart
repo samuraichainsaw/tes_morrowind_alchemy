@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:html' as html;
 import 'dart:js' as js;
 import 'package:flutter/material.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:morrowind_alchemy/accordion.dart';
 import 'package:morrowind_alchemy/attribute_slider.dart';
 import 'package:morrowind_alchemy/autocomplete_text_fields.dart';
@@ -11,6 +12,39 @@ import 'package:morrowind_alchemy/responsive_layout.dart';
 import 'package:morrowind_alchemy/responsive_layout_fn.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+
+class Hoverable extends StatefulWidget {
+  final Widget child;
+
+  const Hoverable({
+    super.key,
+    required this.child,
+  });
+
+  @override
+  _HoverableState createState() => _HoverableState();
+}
+
+class _HoverableState extends State<Hoverable> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: _isHovering ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (event) => _onEntered(true),
+      onExit: (event) => _onEntered(false),
+      child: widget.child,
+    );
+  }
+
+  void _onEntered(bool isHovering) {
+    setState(() {
+      _isHovering = isHovering;
+    });
+  }
+}
 
 var data = ingredients;
 var url = ((js.context['currentLocation'])).toString();
@@ -771,15 +805,20 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: GestureDetector(
-          onTap: () {
-            _selectedEffects.clear();
-            _selectedIngredients.clear();
-            _onSelectedIngredientChange();
-            setState(() {});
-          },
-          child: Text(
-            widget.title,
+        title: Hoverable(
+          child: Tooltip(
+            message: 'reset everything',
+            child: GestureDetector(
+              onTap: () {
+                _selectedEffects.clear();
+                _selectedIngredients.clear();
+                _onSelectedIngredientChange();
+                setState(() {});
+              },
+              child: Text(
+                widget.title,
+              ),
+            ),
           ),
         ),
         bottom: appBarBottom,
