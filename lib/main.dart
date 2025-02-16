@@ -96,6 +96,18 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
+class ConditionallyVisible extends StatelessWidget {
+  final Widget child;
+  final bool isVisible;
+  const ConditionallyVisible(
+      {super.key, required this.child, required this.isVisible});
+
+  @override
+  Widget build(BuildContext context) {
+    return isVisible ? child : Container();
+  }
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -143,6 +155,30 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose(); // Dispose of the controller
     super.dispose();
+  }
+
+  bool _visibleOn(
+      {required List<ResponsiveLayoutBreakPoints> breakpoints,
+      required ResponsiveLayoutBreakPoints currentBreakPoint}) {
+    int index = breakpoints.indexOf(currentBreakPoint);
+    if (index >= 0) {
+      return true;
+    }
+    return false;
+  }
+
+  double _calcWidth(
+      {required List<ResponsiveLayoutBreakPoints> breakpoints,
+      required List<String> widthsPercentage,
+      required double baseWidth,
+      required ResponsiveLayoutBreakPoints currentBreakPoint}) {
+    int index = breakpoints.indexOf(currentBreakPoint);
+    if (index >= 0) {
+      return double.parse(widthsPercentage[index].replaceAll("%", "")) /
+          100 *
+          baseWidth;
+    }
+    return 0;
   }
 
   @override
@@ -202,6 +238,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         return Container();
       },
     ).getFn(context)(contextBreakPoint);
+
+    calcWidth(
+      List<ResponsiveLayoutBreakPoints> breakpoints,
+      List<String> widthsPercentage,
+    ) =>
+        _calcWidth(
+            breakpoints: breakpoints,
+            widthsPercentage: widthsPercentage,
+            baseWidth: MediaQuery.of(context).size.width,
+            currentBreakPoint: contextBreakPoint);
+
     Widget? body = ResponsiveLayout(
       medium: SingleChildScrollView(
         child: Column(
@@ -209,9 +256,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             //Text(constrainst.maxWidth.toString()),
             Card(
               child: SizedBox(
-                width: layoutWidth,
+                width: calcWidth([
+                  ResponsiveLayoutBreakPoints.medium,
+                  ResponsiveLayoutBreakPoints.large,
+                  ResponsiveLayoutBreakPoints.xLarge,
+                  ResponsiveLayoutBreakPoints.xxLarge,
+                ], [
+                  '90%',
+                  '90%',
+                  '90%',
+                  '90%'
+                ]),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     AttributeSlider(
                       onSliderValueChanged: onAlchemySliderValueChanged,
@@ -237,18 +294,39 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            _ActiveEffectsContent(),
+            ConditionallyVisible(
+                child: _ActiveEffectsContent(),
+                isVisible: _visibleOn(breakpoints: [
+                  ResponsiveLayoutBreakPoints.medium,
+                ], currentBreakPoint: contextBreakPoint)),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ConditionallyVisible(
+                    child: _ActiveEffectsContent(),
+                    isVisible: _visibleOn(breakpoints: [
+                      ResponsiveLayoutBreakPoints.large,
+                      ResponsiveLayoutBreakPoints.xLarge,
+                      ResponsiveLayoutBreakPoints.xxLarge,
+                    ], currentBreakPoint: contextBreakPoint)),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Center(
                       child: Card(
                         child: SizedBox(
-                          width: columnWidth,
+                          width: calcWidth([
+                            ResponsiveLayoutBreakPoints.medium,
+                            ResponsiveLayoutBreakPoints.large,
+                            ResponsiveLayoutBreakPoints.xLarge,
+                            ResponsiveLayoutBreakPoints.xxLarge,
+                          ], [
+                            '30%',
+                            '20%',
+                            '20%',
+                            '20%'
+                          ]),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
@@ -286,7 +364,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   children: [
                     Card(
                       child: SizedBox(
-                        width: columnWidth,
+                        width: calcWidth([
+                          ResponsiveLayoutBreakPoints.medium,
+                          ResponsiveLayoutBreakPoints.large,
+                          ResponsiveLayoutBreakPoints.xLarge,
+                          ResponsiveLayoutBreakPoints.xxLarge,
+                        ], [
+                          '30%',
+                          '20%',
+                          '20%',
+                          '20%'
+                        ]),
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
                           child: Column(
@@ -312,7 +400,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     for (var selectedEffect in _selectedEffects)
                       (Card(
                         child: SizedBox(
-                          width: columnWidth,
+                          width: calcWidth([
+                            ResponsiveLayoutBreakPoints.medium,
+                            ResponsiveLayoutBreakPoints.large,
+                            ResponsiveLayoutBreakPoints.xLarge,
+                            ResponsiveLayoutBreakPoints.xxLarge,
+                          ], [
+                            '30%',
+                            '20%',
+                            '20%',
+                            '20%'
+                          ]),
                           child: Center(
                             child: Column(
                               children: [
@@ -376,7 +474,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   children: [
                     Card(
                       child: SizedBox(
-                        width: columnWidth,
+                        width: calcWidth([
+                          ResponsiveLayoutBreakPoints.medium,
+                          ResponsiveLayoutBreakPoints.large,
+                          ResponsiveLayoutBreakPoints.xLarge,
+                          ResponsiveLayoutBreakPoints.xxLarge,
+                        ], [
+                          '30%',
+                          '20%',
+                          '20%',
+                          '20%'
+                        ]),
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
                           child: Center(
@@ -409,7 +517,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     Center(
                       child: Card(
                         child: SizedBox(
-                          width: columnWidth,
+                          width: calcWidth([
+                            ResponsiveLayoutBreakPoints.medium,
+                            ResponsiveLayoutBreakPoints.large,
+                            ResponsiveLayoutBreakPoints.xLarge,
+                            ResponsiveLayoutBreakPoints.xxLarge,
+                          ], [
+                            '30%',
+                            '20%',
+                            '20%',
+                            '20%'
+                          ]),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
@@ -653,8 +771,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-          widget.title,
+        title: GestureDetector(
+          onTap: () {
+            _selectedEffects.clear();
+            _selectedIngredients.clear();
+            _onSelectedIngredientChange();
+            setState(() {});
+          },
+          child: Text(
+            widget.title,
+          ),
         ),
         bottom: appBarBottom,
       ),
