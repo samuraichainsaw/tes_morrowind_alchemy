@@ -7,13 +7,15 @@ class AttributeSlider extends StatefulWidget {
   String description;
   final void Function(double p) onSliderValueChanged;
   final ResponsiveLayoutBreakPoints breakPoint;
+  final double width;
   AttributeSlider(
       {super.key,
       required this.onSliderValueChanged,
       required this.value,
       required this.caption,
       required this.breakPoint,
-      this.description = ""});
+      this.description = "",
+      required this.width});
   @override
   State<StatefulWidget> createState() => _AttributeSliderState(
       value: value,
@@ -100,17 +102,20 @@ class _AttributeSliderState extends State<AttributeSlider> {
             textAlign: TextAlign.center,
           ),
         ),
-        Slider(
-          value: widget.value,
-          max: 100,
-          divisions: 100,
-          label: widget.value.round().toString(),
-          onChanged: (double v) {
-            onSliderValueChanged(v);
-            setState(() {
-              value = v;
-            });
-          },
+        SizedBox(
+          width: widget.width,
+          child: Slider(
+            value: widget.value,
+            max: 100,
+            divisions: 100,
+            label: widget.value.round().toString(),
+            onChanged: (double v) {
+              onSliderValueChanged(v);
+              setState(() {
+                value = v;
+              });
+            },
+          ),
         ),
       ],
     );

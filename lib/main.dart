@@ -1,6 +1,6 @@
 import 'dart:math';
-import 'dart:html' as html;
-import 'dart:js' as js;
+//import 'dart:html' as html;
+//import 'dart:js' as js;
 import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:morrowind_alchemy/accordion.dart';
@@ -13,6 +13,7 @@ import 'package:morrowind_alchemy/responsive_layout_fn.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 class Hoverable extends StatefulWidget {
   final Widget child;
@@ -47,14 +48,14 @@ class _HoverableState extends State<Hoverable> {
 }
 
 var data = ingredients;
-var url = ((js.context['currentLocation'])).toString();
+//var url = ((js.context['currentLocation'])).toString();
 double scaleFactorCallback(Size deviceSize) {
   // screen width used in your UI design
-  var currentScale = js.context['devicePixelRatio'] as num?; // or as double?
-  currentScale = currentScale ?? 1.0;
-  const double widthOfDesign = 1024;
-
-  return (deviceSize.width / widthOfDesign) * currentScale;
+  //var currentScale = js.context['devicePixelRatio'] as num?; // or as double?
+  //currentScale = currentScale ?? 1.0;
+  //const double widthOfDesign = 1024;
+  return 1.0;
+  //return (deviceSize.width / widthOfDesign) * currentScale;
 }
 
 void main() {
@@ -91,20 +92,20 @@ class _MyAppState extends State<MyApp> {
     );
 
     // Check if the browser supports the `prefers-color-scheme` media query
-    final window = html.window;
-    final mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+    //final window = html.window;
+    //final mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
 
     // Listener for changes in user's color scheme preference
-    mediaQueryList.addListener((event) {
+    /*mediaQueryList.addListener((event) {
       setState(() {
         _themeMode = mediaQueryList.matches ? ThemeMode.dark : ThemeMode.light;
       });
     });
-
+    */
     // Set the initial theme based on the current preference
     setState(() {
-      _themeMode =
-          mediaQueryList.matches == true ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = ThemeMode
+          .dark; //mediaQueryList.matches == true ? ThemeMode.dark : ThemeMode.light;
     });
   }
 
@@ -161,6 +162,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   final Set<String> _effects = {};
   final Set<String> _selectedEffects = {};
   final Map<String, dynamic> _ingredientsByEffect = {};
+
+  final GlobalKey _cartKey1 = GlobalKey();
+  final GlobalKey _cartKey2 = GlobalKey();
+  final GlobalKey _cartKey4 = GlobalKey();
+  final GlobalKey _cartKey5 = GlobalKey();
+  final GlobalKey _cartKey3 = GlobalKey();
 
   var _sortedEffects = [];
   List<Widget> _effectsWidgets = [
@@ -225,6 +232,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     var layoutWidth =
         min(1024, max(MediaQuery.of(context).size.width, 800)).toDouble();
     var columnWidth = layoutWidth / 3.0 - 6.0;
+
     ResponsiveLayoutFn(
       medium: (className) {
         return Container();
@@ -244,25 +252,30 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           controller: _tabController, // Assign the controller
           tabs: [
             Tab(
+              key: _cartKey1,
               icon: Icon(Icons.home),
               text: 'attributes',
             ),
             TopNavigationTab(
+              key: _cartKey2,
               caption: 'known effects',
               count: _effects.length,
               icon: Icon(Icons.thunderstorm_outlined),
             ),
             TopNavigationTab(
+              key: _cartKey3,
               caption: 'effects',
               count: _selectedEffects.length,
               icon: Icon(Icons.thunderstorm),
             ),
             TopNavigationTab(
+              key: _cartKey4,
               caption: 'ingredients',
               count: _selectedIngredients.length,
               icon: Icon(Icons.local_grocery_store_outlined),
             ),
             TopNavigationTab(
+              key: _cartKey5,
               caption: 'potion',
               count: _activeEffects.length,
               icon: Icon(Icons.face),
@@ -282,7 +295,21 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             widthsPercentage: widthsPercentage,
             baseWidth: MediaQuery.of(context).size.width,
             currentBreakPoint: contextBreakPoint);
-
+    double attributeSliderWidth = calcWidth([
+      ResponsiveLayoutBreakPoints.xSmall,
+      ResponsiveLayoutBreakPoints.small,
+      ResponsiveLayoutBreakPoints.medium,
+      ResponsiveLayoutBreakPoints.large,
+      ResponsiveLayoutBreakPoints.xLarge,
+      ResponsiveLayoutBreakPoints.xxLarge,
+    ], [
+      '30%',
+      '30%',
+      '12%',
+      '15%',
+      '15%',
+      '15%'
+    ]);
     Widget? body = ResponsiveLayout(
       medium: SingleChildScrollView(
         child: Column(
@@ -311,39 +338,42 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                       description:
                           "Alchemy skill level. Determines how many effects can you identify\n on ingredients. Improves potion quality, strength and success chance.",
                       breakPoint: contextBreakPoint,
+                      width: attributeSliderWidth,
                     ),
                     AttributeSlider(
                       onSliderValueChanged: onIntSliderValueChanged,
                       value: _currentIntSliderValue,
                       caption: "Intelligence",
                       breakPoint: contextBreakPoint,
+                      width: attributeSliderWidth,
                     ),
                     AttributeSlider(
                       onSliderValueChanged: onLuckSliderValueChanged,
                       value: _currentLuckSliderValue,
                       caption: "Luck",
                       breakPoint: contextBreakPoint,
+                      width: attributeSliderWidth,
                     ),
                   ],
                 ),
               ),
             ),
             ConditionallyVisible(
-                child: _ActiveEffectsContent(),
                 isVisible: _visibleOn(breakpoints: [
                   ResponsiveLayoutBreakPoints.medium,
-                ], currentBreakPoint: contextBreakPoint)),
+                ], currentBreakPoint: contextBreakPoint),
+                child: _ActiveEffectsContent()),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ConditionallyVisible(
-                    child: _ActiveEffectsContent(),
                     isVisible: _visibleOn(breakpoints: [
                       ResponsiveLayoutBreakPoints.large,
                       ResponsiveLayoutBreakPoints.xLarge,
                       ResponsiveLayoutBreakPoints.xxLarge,
-                    ], currentBreakPoint: contextBreakPoint)),
+                    ], currentBreakPoint: contextBreakPoint),
+                    child: _ActiveEffectsContent()),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -598,18 +628,21 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 description:
                     "Alchemy skill level. Determines how many effects can you identify\n on ingredients. Improves potion quality, strength and success chance.",
                 breakPoint: contextBreakPoint,
+                width: attributeSliderWidth,
               ),
               AttributeSlider(
                 onSliderValueChanged: onIntSliderValueChanged,
                 value: _currentIntSliderValue,
                 caption: "Intelligence",
                 breakPoint: contextBreakPoint,
+                width: attributeSliderWidth,
               ),
               AttributeSlider(
                 onSliderValueChanged: onLuckSliderValueChanged,
                 value: _currentLuckSliderValue,
                 caption: "Luck",
                 breakPoint: contextBreakPoint,
+                width: attributeSliderWidth,
               ),
             ],
           ),
@@ -1392,7 +1425,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     var alchemy = max(min(100, (await prefs.getInt('skill_alchemy')) ?? 25), 0);
 
     setState(() {
-      if (url.contains("#stats/")) {
+      /*if (url.contains("#stats/")) {
         url = url.substring(url.indexOf("#stats/"));
         url = url.replaceAll("#stats/", "");
         List<String> parts = url.split("/");
@@ -1453,12 +1486,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         }
       }
       print(_effects.length);
+      */
     });
   }
 
   void updateBrowserURL() {
-    html.window.history.pushState(null, ".",
-        '#stats/${_currentIntSliderValue.round()}/${_currentLuckSliderValue.round()}/${_currentAlchemySliderValue.round()}/potion/${_selectedEffects.toList().join(":")}/${_selectedIngredients.toList().join(":")}');
+    /*html.window.history.pushState(null, ".",
+        '#stats/${_currentIntSliderValue.round()}/${_currentLuckSliderValue.round()}/${_currentAlchemySliderValue.round()}/potion/${_selectedEffects.toList().join(":")}/${_selectedIngredients.toList().join(":")}');*/
   }
 
   void _addOrRemoveEffect(arrLabel) {

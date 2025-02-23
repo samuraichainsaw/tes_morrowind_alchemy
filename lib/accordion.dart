@@ -13,7 +13,7 @@ class Accordion extends StatefulWidget {
   final Icon? collapseIcon;
 
   const Accordion({
-    Key? key,
+    super.key,
     required this.title,
     required this.content,
     this.initiallyExpanded = false,
@@ -24,7 +24,7 @@ class Accordion extends StatefulWidget {
     this.titleBackgroundColor,
     this.expandIcon,
     this.collapseIcon,
-  }) : super(key: key);
+  });
 
   @override
   _AccordionState createState() => _AccordionState();

@@ -35,6 +35,13 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "morrowind_alchemy (android mode)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "android",
+            "flutterMode": "release"
         }
     ]
 }
